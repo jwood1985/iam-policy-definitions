@@ -2,8 +2,8 @@
 const https = require('https');
 
 const DT_URL = 'qof78400.live.dynatrace.com';
-const TOKEN = 'process.env.DT_API_TOKEN';
-const PLAT_TOKEN = 'process.env.DT_PLATFORM_TOKEN';
+const TOKEN = process.env.DT_API_TOKEN;
+const PLAT_TOKEN = process.env.DT_PLATFORM_TOKEN;
 
 function dtReq(method, path, body, token) {
   return new Promise((resolve, reject) => {

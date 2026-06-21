@@ -4,7 +4,7 @@
 const https = require('https');
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const PLATFORM_TOKEN = 'process.env.DT_PLATFORM_TOKEN';
+const PLATFORM_TOKEN = process.env.DT_PLATFORM_TOKEN;
 const TENANT_ID     = 'qof78400';
 const USER_EMAIL    = 'joshuadwood.phd@gmail.com';
 const IAM_HOST      = 'api.dynatrace.com';

@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Secrets / environment — never commit real credentials
+.env
+.env.local
+.env.*.local
+*.env
+!*.env.template
+
+# Generated artifacts (screenshots, RUM traffic output)
+artifacts/
+dt-vision/artifacts/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+*.swp

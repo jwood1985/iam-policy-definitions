@@ -3,8 +3,8 @@
 const https = require('https');
 
 const DT_URL = 'qof78400.live.dynatrace.com';
-const TOKEN_OTEL = 'process.env.DT_API_TOKEN';
-const TOKEN_OP = 'process.env.DT_TOKEN_OP';
+const TOKEN_OTEL = process.env.DT_API_TOKEN;
+const TOKEN_OP = process.env.DT_TOKEN_OP;
 
 function dtRequest(method, path, body) {
   return new Promise((resolve, reject) => {

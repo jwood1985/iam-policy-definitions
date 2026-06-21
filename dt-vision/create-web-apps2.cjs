@@ -3,9 +3,9 @@ const https = require('https');
 
 const DT_URL = 'qof78400.live.dynatrace.com';
 const TOKENS = {
-  otel: 'process.env.DT_API_TOKEN',
-  op:   'process.env.DT_TOKEN_OP',
-  plat: 'process.env.DT_PLATFORM_TOKEN'
+  otel: process.env.DT_API_TOKEN,
+  op:   process.env.DT_TOKEN_OP,
+  plat: process.env.DT_PLATFORM_TOKEN
 };
 
 function dtRequest(token, method, path, body) {

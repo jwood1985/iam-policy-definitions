@@ -2,7 +2,7 @@
 const https = require('https');
 
 const DT_URL = 'qof78400.live.dynatrace.com';
-const TOKEN = 'process.env.DT_API_TOKEN';
+const TOKEN = process.env.DT_API_TOKEN;
 const TRIP_APP_ID = 'APPLICATION-FEEDBEEF0001AAAA';
 const TRADE_APP_ID = 'APPLICATION-FEEDBEEF0002AAAA';
 

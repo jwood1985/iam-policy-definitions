@@ -2,7 +2,7 @@
 const https = require('https');
 
 const DT_URL = 'qof78400.live.dynatrace.com';
-const TOKEN = 'process.env.DT_API_TOKEN';
+const TOKEN = process.env.DT_API_TOKEN;
 
 function req(method, path, body) {
   return new Promise((resolve, reject) => {
@@ -177,7 +177,7 @@ async function main() {
     console.log(`tradeId: ${tradeId}`);
 
     // Create app detection rules
-    const TOKEN2 = 'process.env.DT_PLATFORM_TOKEN';
+    const TOKEN2 = process.env.DT_PLATFORM_TOKEN;
     console.log('\nCreating app detection rules...');
     for (const [ip, appId, name] of [['4.249.216.206', tripId, 'trip'], ['20.15.188.98', tradeId, 'trade']]) {
       const b = JSON.stringify([{ schemaId: 'builtin:rum.web.app-detection', scope: 'environment', value: { matcher: 'DOMAIN_MATCHES', pattern: ip, applicationId: appId } }]);
