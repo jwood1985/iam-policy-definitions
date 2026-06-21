@@ -1,0 +1,78 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trade-advisor
+  namespace: frontend-apps
+  labels:
+    app: trade-advisor
+    app.kubernetes.io/name: trade-advisor
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trade-advisor
+  template:
+    metadata:
+      labels:
+        app: trade-advisor
+        app.kubernetes.io/name: trade-advisor
+    spec:
+      nodeSelector:
+        agentpool: x86pool
+      tolerations:
+        - key: arch
+          operator: Equal
+          value: x86
+          effect: NoSchedule
+      containers:
+        - name: trade-advisor
+          image: node:18-alpine
+          command: ["node", "/app/server.js"]
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          volumeMounts:
+            - name: app-code
+              mountPath: /app
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: app-code
+          configMap:
+            name: trade-advisor-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trade-advisor
+  namespace: frontend-apps
+  labels:
+    app: trade-advisor
+spec:
+  type: LoadBalancer
+  selector:
+    app: trade-advisor
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+      protocol: TCP

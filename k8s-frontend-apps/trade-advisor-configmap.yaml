@@ -1,0 +1,341 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trade-advisor-app
+  namespace: frontend-apps
+data:
+  server.js: |
+    const http = require('http');
+    const url = require('url');
+    const fs = require('fs');
+    const path = require('path');
+
+    const APP_DIR = '/app';
+
+    function loadPage(name) {
+      try { return fs.readFileSync(path.join(APP_DIR, name), 'utf8'); }
+      catch (e) { return '<html><body><h1>Page not found</h1></body></html>'; }
+    }
+
+    function getAnalysisPage(type) {
+      const nav = '<header style="background:#161b22;padding:20px 40px;border-bottom:1px solid #30363d">'
+        + '<span style="font-size:1.5em;font-weight:bold;color:#58a6ff">TradeAdvisor AI</span>'
+        + '<nav style="display:inline;margin-left:30px">'
+        + '<a href="/" style="color:#58a6ff;margin:0 10px;text-decoration:none">Home</a>'
+        + '<a href="/markets" style="color:#58a6ff;margin:0 10px;text-decoration:none">Markets</a>'
+        + '<a href="/portfolio" style="color:#58a6ff;margin:0 10px;text-decoration:none">Portfolio</a>'
+        + '<a href="/analysis" style="color:#58a6ff;margin:0 10px;text-decoration:none">Analysis</a>'
+        + '</nav></header>';
+      return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>AI Analysis - TradeAdvisor</title>'
+        + '<style>body{font-family:Arial,sans-serif;margin:0;background:#0d1117;color:#e6edf3}'
+        + '.content{padding:30px 40px}.signal-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:20px;margin-bottom:15px}'
+        + 'footer{background:#161b22;color:#8b949e;text-align:center;padding:20px;border-top:1px solid #30363d;margin-top:40px}'
+        + '</style></head><body>'
+        + nav
+        + '<div class="content"><h1 style="color:#58a6ff">AI Market Analysis</h1>'
+        + '<p style="color:#8b949e">Type: ' + (type || 'general') + ' | Updated: ' + new Date().toLocaleString() + '</p>'
+        + '<div class="signal-card"><h3 style="color:#3fb950">STRONG BUY - NVDA</h3>'
+        + '<p>AI confidence: 94% | Target: $950 | Timeframe: 30 days</p>'
+        + '<p style="color:#8b949e">NVIDIA continues to dominate the AI chip market.</p></div>'
+        + '<div class="signal-card"><h3 style="color:#3fb950">BUY - AAPL</h3>'
+        + '<p>AI confidence: 78% | Target: $210 | Timeframe: 60 days</p>'
+        + '<p style="color:#8b949e">Apple Intelligence features driving upgrade cycle.</p></div>'
+        + '<div class="signal-card"><h3 style="color:#f85149">SELL - TSLA</h3>'
+        + '<p>AI confidence: 71% | Target: $210 | Timeframe: 45 days</p>'
+        + '<p style="color:#8b949e">Margin pressure from price cuts continues.</p></div>'
+        + '</div><footer>&copy; 2026 TradeAdvisor AI - Not financial advice.</footer></body></html>';
+    }
+
+    function getStockPage(symbol) {
+      const nav = '<header style="background:#161b22;padding:20px 40px;border-bottom:1px solid #30363d">'
+        + '<span style="font-size:1.5em;font-weight:bold;color:#58a6ff">TradeAdvisor AI</span>'
+        + '<nav style="display:inline;margin-left:30px">'
+        + '<a href="/" style="color:#58a6ff;margin:0 10px;text-decoration:none">Home</a>'
+        + '<a href="/markets" style="color:#58a6ff;margin:0 10px;text-decoration:none">Markets</a>'
+        + '</nav></header>';
+      return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>' + symbol + ' - TradeAdvisor AI</title>'
+        + '<style>body{font-family:Arial,sans-serif;margin:0;background:#0d1117;color:#e6edf3}'
+        + 'footer{background:#161b22;color:#8b949e;text-align:center;padding:20px;border-top:1px solid #30363d;margin-top:40px}'
+        + '</style></head><body>'
+        + nav
+        + '<div style="padding:30px 40px"><h1 style="color:#58a6ff">' + symbol + ' Stock Detail</h1>'
+        + '<p>AI-powered analysis for ' + symbol + '.</p>'
+        + '<a href="/markets" style="color:#58a6ff">Back to Markets</a>'
+        + '</div><footer>&copy; 2026 TradeAdvisor AI</footer></body></html>';
+    }
+
+    const server = http.createServer(function(req, res) {
+      const parsed = url.parse(req.url, true);
+      const pathname = parsed.pathname;
+      const query = parsed.query;
+      res.setHeader('X-Powered-By', 'TradeAdvisor-AI/1.0');
+      if (pathname === '/' || pathname === '/index.html') {
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(loadPage('index.html'));
+      } else if (pathname === '/markets') {
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(loadPage('markets.html'));
+      } else if (pathname === '/portfolio') {
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(loadPage('portfolio.html'));
+      } else if (pathname === '/about') {
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(loadPage('about.html'));
+      } else if (pathname === '/analysis') {
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(getAnalysisPage(query.type));
+      } else if (pathname.startsWith('/stock/')) {
+        const sym = pathname.replace('/stock/', '').toUpperCase();
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(getStockPage(sym));
+      } else if (pathname === '/health') {
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({status:'ok',app:'trade-advisor'}));
+      } else {
+        res.writeHead(302, {'Location': '/'});
+        res.end();
+      }
+    });
+
+    server.listen(3000, '0.0.0.0', function() {
+      console.log('[trade-advisor] Server running on port 3000');
+    });
+
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Trade Advisor - AI Trading Insights</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #0d1117; color: #e6edf3; }
+        header { background: #161b22; padding: 20px 40px; border-bottom: 1px solid #30363d; }
+        nav a { color: #58a6ff; margin: 0 15px; text-decoration: none; font-weight: bold; }
+        .ticker { background: #161b22; padding: 10px 40px; display: flex; gap: 30px; overflow-x: auto; border-bottom: 1px solid #30363d; }
+        .tick { display: flex; gap: 8px; align-items: center; white-space: nowrap; }
+        .up { color: #3fb950; } .down { color: #f85149; }
+        .hero { background: linear-gradient(135deg, #0d1117, #1c2128); padding: 80px 40px; text-align: center; border-bottom: 1px solid #30363d; }
+        .hero h1 { font-size: 2.8em; color: #58a6ff; margin-bottom: 10px; }
+        .hero p { font-size: 1.2em; color: #8b949e; margin-bottom: 30px; }
+        .btn { background: #238636; color: white; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-size: 1em; font-weight: bold; }
+        .btn-secondary { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; }
+        .cards { display: flex; gap: 20px; padding: 40px; flex-wrap: wrap; justify-content: center; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 25px; width: 280px; }
+        .card h3 { color: #58a6ff; margin: 0 0 10px; }
+        footer { background: #161b22; color: #8b949e; text-align: center; padding: 20px; border-top: 1px solid #30363d; margin-top: 40px; }
+      </style>
+    </head>
+    <body>
+      <header>
+        <span style="font-size:1.5em;font-weight:bold;color:#58a6ff">TradeAdvisor AI</span>
+        <nav style="display:inline;margin-left:30px">
+          <a href="/">Home</a>
+          <a href="/markets">Markets</a>
+          <a href="/portfolio">My Portfolio</a>
+          <a href="/analysis">AI Analysis</a>
+          <a href="/about">About</a>
+        </nav>
+      </header>
+      <div class="ticker">
+        <div class="tick">AAPL <span class="up">+2.4% $187.50</span></div>
+        <div class="tick">GOOGL <span class="up">+1.8% $3,125.80</span></div>
+        <div class="tick">MSFT <span class="up">+0.9% $412.30</span></div>
+        <div class="tick">TSLA <span class="down">-1.2% $248.90</span></div>
+        <div class="tick">AMZN <span class="up">+3.1% $198.70</span></div>
+        <div class="tick">NVDA <span class="up">+5.6% $875.40</span></div>
+        <div class="tick">META <span class="up">+2.0% $534.20</span></div>
+        <div class="tick">BTC <span class="up">+4.3% $67,450</span></div>
+      </div>
+      <div class="hero">
+        <h1>AI-Powered Trading Intelligence</h1>
+        <p>Make smarter investment decisions with real-time AI analysis</p>
+        <a href="/markets" class="btn">View Markets</a>
+        <a href="/analysis" class="btn btn-secondary" style="margin-left:10px">AI Analysis</a>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <h3>AI Signals</h3>
+          <p style="color:#8b949e">Real-time buy/sell signals powered by ML models trained on 20 years of market data.</p>
+          <a href="/analysis" style="color:#58a6ff">View signals</a>
+        </div>
+        <div class="card">
+          <h3>Market Analytics</h3>
+          <p style="color:#8b949e">Deep dive into sector performance, correlation analysis, and volatility forecasting.</p>
+          <a href="/markets" style="color:#58a6ff">Explore markets</a>
+        </div>
+        <div class="card">
+          <h3>Portfolio Optimizer</h3>
+          <p style="color:#8b949e">AI-powered portfolio rebalancing to maximize returns while managing risk.</p>
+          <a href="/portfolio" style="color:#58a6ff">Optimize portfolio</a>
+        </div>
+        <div class="card">
+          <h3>News Intelligence</h3>
+          <p style="color:#8b949e">NLP-powered news sentiment analysis across 50,000+ sources in real-time.</p>
+          <a href="/analysis?type=news" style="color:#58a6ff">Read insights</a>
+        </div>
+      </div>
+      <footer>&copy; 2026 TradeAdvisor AI - Not financial advice. For informational purposes only.</footer>
+    </body>
+    </html>
+
+  markets.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Markets - Trade Advisor AI</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #0d1117; color: #e6edf3; }
+        header { background: #161b22; padding: 20px 40px; border-bottom: 1px solid #30363d; }
+        nav a { color: #58a6ff; margin: 0 15px; text-decoration: none; font-weight: bold; }
+        h1 { color: #58a6ff; padding: 30px 40px 10px; }
+        table { width: 90%; margin: 0 auto; border-collapse: collapse; background: #161b22; border-radius: 8px; overflow: hidden; }
+        th { background: #21262d; padding: 12px 16px; text-align: left; color: #8b949e; font-size: 0.85em; text-transform: uppercase; }
+        td { padding: 14px 16px; border-bottom: 1px solid #21262d; }
+        .up { color: #3fb950; } .down { color: #f85149; }
+        footer { background: #161b22; color: #8b949e; text-align: center; padding: 20px; border-top: 1px solid #30363d; margin-top: 40px; }
+      </style>
+    </head>
+    <body>
+      <header>
+        <span style="font-size:1.5em;font-weight:bold;color:#58a6ff">TradeAdvisor AI</span>
+        <nav style="display:inline;margin-left:30px">
+          <a href="/">Home</a>
+          <a href="/markets">Markets</a>
+          <a href="/portfolio">Portfolio</a>
+          <a href="/analysis">Analysis</a>
+        </nav>
+      </header>
+      <h1>Market Overview</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Symbol</th><th>Company</th><th>Price</th><th>Change</th><th>% Change</th><th>Volume</th><th>AI Signal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><a href="/stock/AAPL" style="color:#58a6ff">AAPL</a></td><td>Apple Inc.</td><td>$187.50</td><td class="up">+$4.38</td><td class="up">+2.4%</td><td>62.3M</td><td style="color:#3fb950">BUY</td></tr>
+          <tr><td><a href="/stock/MSFT" style="color:#58a6ff">MSFT</a></td><td>Microsoft Corp.</td><td>$412.30</td><td class="up">+$3.67</td><td class="up">+0.9%</td><td>18.7M</td><td style="color:#3fb950">BUY</td></tr>
+          <tr><td><a href="/stock/GOOGL" style="color:#58a6ff">GOOGL</a></td><td>Alphabet Inc.</td><td>$3,125.80</td><td class="up">+$55.21</td><td class="up">+1.8%</td><td>8.2M</td><td style="color:#e3b341">HOLD</td></tr>
+          <tr><td><a href="/stock/TSLA" style="color:#58a6ff">TSLA</a></td><td>Tesla Inc.</td><td>$248.90</td><td class="down">-$3.01</td><td class="down">-1.2%</td><td>45.1M</td><td style="color:#f85149">SELL</td></tr>
+          <tr><td><a href="/stock/NVDA" style="color:#58a6ff">NVDA</a></td><td>NVIDIA Corp.</td><td>$875.40</td><td class="up">+$46.50</td><td class="up">+5.6%</td><td>38.4M</td><td style="color:#3fb950">STRONG BUY</td></tr>
+          <tr><td><a href="/stock/AMZN" style="color:#58a6ff">AMZN</a></td><td>Amazon.com</td><td>$198.70</td><td class="up">+$5.98</td><td class="up">+3.1%</td><td>25.6M</td><td style="color:#3fb950">BUY</td></tr>
+          <tr><td><a href="/stock/META" style="color:#58a6ff">META</a></td><td>Meta Platforms</td><td>$534.20</td><td class="up">+$10.48</td><td class="up">+2.0%</td><td>14.3M</td><td style="color:#3fb950">BUY</td></tr>
+        </tbody>
+      </table>
+      <footer>&copy; 2026 TradeAdvisor AI - Not financial advice.</footer>
+    </body>
+    </html>
+
+  portfolio.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Portfolio - Trade Advisor AI</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #0d1117; color: #e6edf3; }
+        header { background: #161b22; padding: 20px 40px; border-bottom: 1px solid #30363d; }
+        nav a { color: #58a6ff; margin: 0 15px; text-decoration: none; font-weight: bold; }
+        .summary { display: flex; gap: 20px; padding: 30px 40px; flex-wrap: wrap; }
+        .metric { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; flex: 1; min-width: 150px; }
+        .metric h3 { color: #8b949e; margin: 0 0 8px; font-size: 0.85em; text-transform: uppercase; }
+        .metric .value { font-size: 1.8em; font-weight: bold; }
+        footer { background: #161b22; color: #8b949e; text-align: center; padding: 20px; border-top: 1px solid #30363d; margin-top: 40px; }
+      </style>
+    </head>
+    <body>
+      <header>
+        <span style="font-size:1.5em;font-weight:bold;color:#58a6ff">TradeAdvisor AI</span>
+        <nav style="display:inline;margin-left:30px">
+          <a href="/">Home</a>
+          <a href="/markets">Markets</a>
+          <a href="/portfolio">Portfolio</a>
+          <a href="/analysis">Analysis</a>
+        </nav>
+      </header>
+      <div style="padding:30px 40px">
+        <h1 style="color:#58a6ff">My Portfolio</h1>
+        <div class="summary">
+          <div class="metric"><h3>Total Value</h3><div class="value" style="color:#3fb950">$124,850</div></div>
+          <div class="metric"><h3>Today Gain</h3><div class="value" style="color:#3fb950">+$2,341 (+1.91%)</div></div>
+          <div class="metric"><h3>Total Return</h3><div class="value" style="color:#3fb950">+$24,850 (+24.9%)</div></div>
+          <div class="metric"><h3>Positions</h3><div class="value">7</div></div>
+        </div>
+        <h2 style="color:#8b949e;margin:20px 0 15px">Holdings</h2>
+        <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;overflow:hidden">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="background:#21262d">
+                <th style="padding:12px 20px;text-align:left;color:#8b949e">Symbol</th>
+                <th style="padding:12px 20px;text-align:right;color:#8b949e">Shares</th>
+                <th style="padding:12px 20px;text-align:right;color:#8b949e">Avg. Cost</th>
+                <th style="padding:12px 20px;text-align:right;color:#8b949e">Current</th>
+                <th style="padding:12px 20px;text-align:right;color:#8b949e">P&amp;L</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #21262d">
+                <td style="padding:14px 20px;color:#58a6ff">AAPL</td><td style="padding:14px 20px;text-align:right">100</td>
+                <td style="padding:14px 20px;text-align:right">$145.00</td><td style="padding:14px 20px;text-align:right">$187.50</td>
+                <td style="padding:14px 20px;text-align:right;color:#3fb950">+$4,250</td>
+              </tr>
+              <tr style="border-bottom:1px solid #21262d">
+                <td style="padding:14px 20px;color:#58a6ff">NVDA</td><td style="padding:14px 20px;text-align:right">50</td>
+                <td style="padding:14px 20px;text-align:right">$600.00</td><td style="padding:14px 20px;text-align:right">$875.40</td>
+                <td style="padding:14px 20px;text-align:right;color:#3fb950">+$13,770</td>
+              </tr>
+              <tr style="border-bottom:1px solid #21262d">
+                <td style="padding:14px 20px;color:#58a6ff">TSLA</td><td style="padding:14px 20px;text-align:right">40</td>
+                <td style="padding:14px 20px;text-align:right">$280.00</td><td style="padding:14px 20px;text-align:right">$248.90</td>
+                <td style="padding:14px 20px;text-align:right;color:#f85149">-$1,244</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <footer>&copy; 2026 TradeAdvisor AI - Not financial advice.</footer>
+    </body>
+    </html>
+
+  about.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>About - Trade Advisor AI</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #0d1117; color: #e6edf3; }
+        header { background: #161b22; padding: 20px 40px; border-bottom: 1px solid #30363d; }
+        nav a { color: #58a6ff; margin: 0 15px; text-decoration: none; font-weight: bold; }
+        .content { max-width: 800px; margin: 40px auto; padding: 40px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; }
+        footer { background: #161b22; color: #8b949e; text-align: center; padding: 20px; border-top: 1px solid #30363d; margin-top: 40px; }
+      </style>
+    </head>
+    <body>
+      <header>
+        <span style="font-size:1.5em;font-weight:bold;color:#58a6ff">TradeAdvisor AI</span>
+        <nav style="display:inline;margin-left:30px">
+          <a href="/">Home</a>
+          <a href="/markets">Markets</a>
+          <a href="/portfolio">Portfolio</a>
+          <a href="/analysis">Analysis</a>
+        </nav>
+      </header>
+      <div class="content">
+        <h1 style="color:#58a6ff">About TradeAdvisor AI</h1>
+        <p>TradeAdvisor AI is an advanced investment intelligence platform that combines machine learning, NLP, and quantitative finance to help investors make better decisions.</p>
+        <h2 style="color:#8b949e">Our Technology</h2>
+        <ul>
+          <li>Proprietary ML models trained on 20 years of market data</li>
+          <li>Real-time sentiment analysis from 50,000+ news sources</li>
+          <li>Alternative data integration</li>
+          <li>Portfolio optimization using modern portfolio theory and AI</li>
+        </ul>
+        <h2 style="color:#8b949e">Risk Disclaimer</h2>
+        <p style="color:#f85149">Trading involves substantial risk. TradeAdvisor AI signals are for informational purposes only and do not constitute financial advice.</p>
+      </div>
+      <footer>&copy; 2026 TradeAdvisor AI</footer>
+    </body>
+    </html>

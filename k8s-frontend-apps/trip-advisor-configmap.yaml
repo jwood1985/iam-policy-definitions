@@ -1,0 +1,260 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trip-advisor-app
+  namespace: frontend-apps
+data:
+  server.js: |
+    const http = require('http');
+    const url = require('url');
+    const fs = require('fs');
+    const path = require('path');
+
+    const APP_DIR = '/app';
+
+    function loadPage(name) {
+      try { return fs.readFileSync(path.join(APP_DIR, name), 'utf8'); }
+      catch (e) { return '<html><body><h1>Page not found</h1></body></html>'; }
+    }
+
+    function getSearchPage(q) {
+      const dests = {
+        beach: ['Maldives','Bali','Miami','Santorini','Phuket'],
+        mountains: ['Patagonia','Swiss Alps','Himalayas','Rockies','Dolomites'],
+        popular: ['Paris','New York','Tokyo','London','Dubai'],
+        culture: ['Kyoto','Rome','Istanbul','Cairo','Marrakech'],
+      };
+      const results = dests[q] || dests.popular;
+      const items = results.map(function(d, i) {
+        return '<div class="result-item"><h3>' + (i+1) + '. ' + d + '</h3>'
+          + '<p>Highly recommended destination. Average cost: $' + (Math.floor(Math.random()*2000)+500) + '/person.</p>'
+          + '<a href="/destination/' + d.toLowerCase().replace(/ /g,'-') + '" style="color:#f77f00;font-weight:bold">View Details &rarr;</a></div>';
+      }).join('');
+      const nav = '<header><span style="font-size:1.5em;font-weight:bold">TripAdvisor AI</span>'
+        + '<nav style="display:inline;margin-left:30px">'
+        + '<a href="/" style="color:white;margin:0 10px;text-decoration:none">Home</a>'
+        + '<a href="/destinations" style="color:white;margin:0 10px;text-decoration:none">Destinations</a>'
+        + '<a href="/about" style="color:white;margin:0 10px;text-decoration:none">About</a></nav></header>';
+      return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Search: ' + q + ' - Trip Advisor AI</title>'
+        + '<style>body{font-family:Arial,sans-serif;margin:0;background:#f0f4f8;color:#333}'
+        + 'header{background:#0077b6;color:white;padding:20px 40px}'
+        + '.results{padding:40px}.result-item{background:white;padding:20px;border-radius:8px;margin-bottom:15px}'
+        + '.result-item h3{color:#0077b6;margin:0 0 5px}'
+        + 'footer{background:#03045e;color:#adb5bd;text-align:center;padding:20px;margin-top:40px}</style></head><body>'
+        + nav
+        + '<div class="results"><h1>Search: "' + q + '"</h1><p>' + results.length + ' destinations found:</p>' + items + '</div>'
+        + '<footer>&copy; 2026 TripAdvisor AI</footer></body></html>';
+    }
+
+    function getDestinationPage(dest) {
+      const name = dest.charAt(0).toUpperCase() + dest.slice(1).replace(/-/g,' ');
+      const nav = '<header><span style="font-size:1.5em;font-weight:bold">TripAdvisor AI</span>'
+        + '<nav style="display:inline;margin-left:30px">'
+        + '<a href="/" style="color:white;margin:0 10px;text-decoration:none">Home</a>'
+        + '<a href="/destinations" style="color:white;margin:0 10px;text-decoration:none">Destinations</a>'
+        + '<a href="/about" style="color:white;margin:0 10px;text-decoration:none">About</a></nav></header>';
+      return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>' + name + ' - Trip Advisor AI</title>'
+        + '<style>body{font-family:Arial,sans-serif;margin:0;background:#f0f4f8;color:#333}'
+        + 'header{background:#0077b6;color:white;padding:20px 40px}'
+        + '.hero{background:linear-gradient(135deg,#0077b6,#00b4d8);color:white;padding:60px;text-align:center}'
+        + '.content{max-width:900px;margin:40px auto;padding:0 20px}'
+        + '.info-grid{display:flex;gap:20px;flex-wrap:wrap;margin:20px 0}'
+        + '.info-card{background:white;padding:20px;border-radius:8px;flex:1;min-width:200px}'
+        + 'footer{background:#03045e;color:#adb5bd;text-align:center;padding:20px;margin-top:40px}</style></head><body>'
+        + nav
+        + '<div class="hero"><h1>' + name + '</h1><p>Discover the magic of this incredible destination</p></div>'
+        + '<div class="content"><div class="info-grid">'
+        + '<div class="info-card"><h3>Rating</h3><p style="font-size:2em;color:#f77f00">4.8/5</p></div>'
+        + '<div class="info-card"><h3>Avg. Cost</h3><p style="font-size:2em;color:#0077b6">$1,200</p></div>'
+        + '<div class="info-card"><h3>Best Time</h3><p style="font-size:1.5em;color:#00b4d8">Apr - Oct</p></div>'
+        + '</div><h2>Highlights</h2><ul><li>World-class cuisine</li><li>Rich cultural heritage</li><li>Breathtaking landscapes</li></ul>'
+        + '<a href="/destinations" style="display:inline-block;margin-top:20px;padding:12px 25px;background:#0077b6;color:white;border-radius:8px;text-decoration:none">&larr; Back to Destinations</a>'
+        + '</div><footer>&copy; 2026 TripAdvisor AI</footer></body></html>';
+    }
+
+    const server = http.createServer(function(req, res) {
+      const parsed = url.parse(req.url, true);
+      const pathname = parsed.pathname;
+      const query = parsed.query;
+      res.setHeader('X-Powered-By', 'TripAdvisor-AI/1.0');
+      if (pathname === '/' || pathname === '/index.html') {
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(loadPage('index.html'));
+      } else if (pathname === '/destinations') {
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(loadPage('destinations.html'));
+      } else if (pathname === '/about') {
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(loadPage('about.html'));
+      } else if (pathname === '/search') {
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(getSearchPage(query.q || 'popular'));
+      } else if (pathname.startsWith('/destination/')) {
+        const dest = pathname.replace('/destination/', '');
+        res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
+        res.end(getDestinationPage(dest));
+      } else if (pathname === '/health') {
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({status:'ok',app:'trip-advisor'}));
+      } else {
+        res.writeHead(302, {'Location': '/'});
+        res.end();
+      }
+    });
+
+    server.listen(3000, '0.0.0.0', function() {
+      console.log('[trip-advisor] Server running on port 3000');
+    });
+
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Trip Advisor - AI Travel Recommendations</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f0f4f8; color: #333; }
+        header { background: #0077b6; color: white; padding: 20px 40px; }
+        nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+        .hero { background: linear-gradient(135deg, #0077b6, #00b4d8); color: white; text-align: center; padding: 80px 20px; }
+        .hero h1 { font-size: 3em; margin-bottom: 10px; }
+        .hero p { font-size: 1.3em; margin-bottom: 30px; }
+        .btn { background: #f77f00; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-size: 1.1em; }
+        .features { display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; padding: 40px; }
+        .feature { background: white; padding: 30px; border-radius: 12px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        footer { background: #03045e; color: #adb5bd; text-align: center; padding: 20px; margin-top: 40px; }
+      </style>
+    </head>
+    <body>
+      <header>
+        <span style="font-size:1.5em;font-weight:bold">TripAdvisor AI</span>
+        <nav style="display:inline;margin-left:30px">
+          <a href="/">Home</a>
+          <a href="/destinations">Destinations</a>
+          <a href="/search?q=beach">Beach Escapes</a>
+          <a href="/search?q=mountains">Mountain Retreats</a>
+          <a href="/about">About</a>
+        </nav>
+      </header>
+      <div class="hero">
+        <h1>Your Next Adventure Awaits</h1>
+        <p>AI-powered travel recommendations tailored just for you</p>
+        <a href="/destinations" class="btn">Explore Destinations</a>
+        <a href="/search?q=popular" class="btn" style="background:#00b4d8;margin-left:10px">Popular Trips</a>
+      </div>
+      <div style="padding:40px;text-align:center">
+        <h2>Why Choose TripAdvisor AI?</h2>
+        <div class="features">
+          <div class="feature">
+            <div style="font-size:3em">&#127758;</div>
+            <h3>Smart Matching</h3>
+            <p>AI matches destinations to your preferences</p>
+          </div>
+          <div class="feature">
+            <div style="font-size:3em">&#128176;</div>
+            <h3>Best Prices</h3>
+            <p>Real-time price comparison</p>
+          </div>
+          <div class="feature">
+            <div style="font-size:3em">&#11088;</div>
+            <h3>Verified Reviews</h3>
+            <p>Millions of authentic reviews</p>
+          </div>
+        </div>
+      </div>
+      <footer>&copy; 2026 TripAdvisor AI - Discover the world intelligently</footer>
+    </body>
+    </html>
+
+  destinations.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Destinations - Trip Advisor AI</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f0f4f8; color: #333; }
+        header { background: #0077b6; color: white; padding: 20px 40px; }
+        nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+        h1 { text-align: center; color: #0077b6; padding: 30px; }
+        .grid { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px 40px; justify-content: center; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 260px; padding: 20px; text-align: center; }
+        .card .emoji { font-size: 3em; }
+        .card h3 { color: #0077b6; margin: 10px 0; }
+        .card p { color: #666; font-size: 0.9em; }
+        .card a { display: inline-block; margin-top: 10px; padding: 8px 20px; background: #f77f00; color: white; border-radius: 6px; text-decoration: none; }
+        footer { background: #03045e; color: #adb5bd; text-align: center; padding: 20px; margin-top: 40px; }
+      </style>
+    </head>
+    <body>
+      <header>
+        <span style="font-size:1.5em;font-weight:bold">TripAdvisor AI</span>
+        <nav style="display:inline;margin-left:30px">
+          <a href="/">Home</a>
+          <a href="/destinations">Destinations</a>
+          <a href="/search?q=beach">Beach Escapes</a>
+          <a href="/about">About</a>
+        </nav>
+      </header>
+      <h1>Top Destinations for 2026</h1>
+      <div class="grid">
+        <div class="card"><div class="emoji">&#128508;</div><h3>Paris, France</h3><p>City of light - iconic architecture and world-class cuisine.</p><a href="/destination/paris">Explore</a></div>
+        <div class="card"><div class="emoji">&#127958;&#65039;</div><h3>Bali, Indonesia</h3><p>Tropical paradise with temples and pristine beaches.</p><a href="/destination/bali">Explore</a></div>
+        <div class="card"><div class="emoji">&#128507;</div><h3>New York, USA</h3><p>The city that never sleeps - culture, food, iconic sights.</p><a href="/destination/new-york">Explore</a></div>
+        <div class="card"><div class="emoji">&#127963;&#65039;</div><h3>Kyoto, Japan</h3><p>Ancient temples, geisha culture, and cherry blossoms.</p><a href="/destination/kyoto">Explore</a></div>
+        <div class="card"><div class="emoji">&#127956;&#65039;</div><h3>Patagonia, Chile</h3><p>Dramatic landscapes, glaciers, and wilderness.</p><a href="/destination/patagonia">Explore</a></div>
+        <div class="card"><div class="emoji">&#127979;</div><h3>Dubai, UAE</h3><p>Futuristic skyline meets traditional Middle Eastern culture.</p><a href="/destination/dubai">Explore</a></div>
+        <div class="card"><div class="emoji">&#128024;</div><h3>Serengeti, Tanzania</h3><p>Witness the great migration on the world's most famous safari.</p><a href="/destination/serengeti">Explore</a></div>
+        <div class="card"><div class="emoji">&#127965;&#65039;</div><h3>Maldives</h3><p>Overwater bungalows, clear lagoons, and coral reefs.</p><a href="/destination/maldives">Explore</a></div>
+      </div>
+      <footer>&copy; 2026 TripAdvisor AI</footer>
+    </body>
+    </html>
+
+  about.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>About - Trip Advisor AI</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f0f4f8; color: #333; }
+        header { background: #0077b6; color: white; padding: 20px 40px; }
+        nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+        .content { max-width: 800px; margin: 40px auto; padding: 40px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        footer { background: #03045e; color: #adb5bd; text-align: center; padding: 20px; margin-top: 40px; }
+      </style>
+    </head>
+    <body>
+      <header>
+        <span style="font-size:1.5em;font-weight:bold">TripAdvisor AI</span>
+        <nav style="display:inline;margin-left:30px">
+          <a href="/">Home</a>
+          <a href="/destinations">Destinations</a>
+          <a href="/about">About</a>
+        </nav>
+      </header>
+      <div class="content">
+        <h1>About TripAdvisor AI</h1>
+        <p>TripAdvisor AI is a next-generation travel platform that uses artificial intelligence to help you discover, plan, and book the perfect trip.</p>
+        <h2>Our Mission</h2>
+        <p>We believe travel transforms lives. Our mission is to make world-class travel accessible and inspiring for every explorer.</p>
+        <h2>How It Works</h2>
+        <ol>
+          <li>Tell us your travel preferences and budget</li>
+          <li>Our AI analyzes millions of trips to find your perfect match</li>
+          <li>Browse curated recommendations with real user reviews</li>
+          <li>Book seamlessly with our trusted partner network</li>
+        </ol>
+        <h2>Stats</h2>
+        <ul>
+          <li>195 countries covered</li>
+          <li>50M+ verified reviews</li>
+          <li>10,000+ airline routes</li>
+          <li>2M+ accommodation listings</li>
+        </ul>
+      </div>
+      <footer>&copy; 2026 TripAdvisor AI</footer>
+    </body>
+    </html>
